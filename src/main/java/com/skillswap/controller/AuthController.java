@@ -82,18 +82,9 @@ public class AuthController {
 
                     if (authResult.isSuccess()) {
                         logger.info("Login successful for user: {}", authResult.getUser().getEmail());
-                        loginPanel.setSuccessMessage("Login successful! Welcome back, " + authResult.getUser().getName() + ".");
-
-                        // Inform user of successful login (Dashboard will be loaded in next phase)
-                        JOptionPane.showMessageDialog(
-                                mainFrame,
-                                "Welcome to SkillSwap, " + authResult.getUser().getName() + "!\n\n"
-                                        + "• Student: " + authResult.getUser().getName() + "\n"
-                                        + "• College: " + authResult.getUser().getCollege() + "\n"
-                                        + "• Email:   " + authResult.getUser().getEmail() + "\n\n"
-                                        + "Authentication successful. The student dashboard will be connected next.",
-                                "SkillSwap – Authentication Succeeded",
-                                JOptionPane.INFORMATION_MESSAGE);
+                        loginPanel.clearMessages();
+                        // Automatically open the Student Dashboard without temporary popup
+                        mainFrame.openDashboard(authResult.getUser());
                     } else {
                         loginPanel.setErrorMessage(authResult.getMessage());
                     }

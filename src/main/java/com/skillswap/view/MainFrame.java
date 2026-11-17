@@ -1,7 +1,10 @@
 package com.skillswap.view;
 
 import com.skillswap.controller.AuthController;
+import com.skillswap.controller.DashboardController;
+import com.skillswap.model.User;
 import com.skillswap.util.UIConstants;
+import com.skillswap.view.panels.DashboardPanel;
 import com.skillswap.view.panels.LoginPanel;
 import com.skillswap.view.panels.RegisterPanel;
 
@@ -25,13 +28,16 @@ public class MainFrame extends JFrame {
 
     private final LoginPanel loginPanel;
     private final RegisterPanel registerPanel;
+    private final DashboardPanel dashboardPanel;
+
     private final AuthController authController;
+    private final DashboardController dashboardController;
 
     public MainFrame() {
         super("SkillSwap – Student Skill Exchange Platform");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(UIConstants.FRAME_SIZE);
-        setMinimumSize(new Dimension(850, 650));
+        setMinimumSize(new Dimension(880, 680));
         setLocationRelativeTo(null); // Centre on screen
         getContentPane().setBackground(UIConstants.BG_PRIMARY);
 
@@ -39,16 +45,19 @@ public class MainFrame extends JFrame {
         contentPanel = new JPanel(cardLayout);
         contentPanel.setBackground(UIConstants.BG_PRIMARY);
 
-        // Initialize Authentication Panels
+        // 1. Initialize Views
         loginPanel = new LoginPanel();
         registerPanel = new RegisterPanel();
+        dashboardPanel = new DashboardPanel();
 
-        // Register panels into CardLayout
+        // 2. Register panels into CardLayout
         contentPanel.add(loginPanel, CARD_LOGIN);
         contentPanel.add(registerPanel, CARD_REGISTER);
+        contentPanel.add(dashboardPanel, CARD_DASHBOARD);
 
-        // Initialize Controller to wire UI with Services
+        // 3. Initialize Controllers
         authController = new AuthController(this, loginPanel, registerPanel);
+        dashboardController = new DashboardController(this, dashboardPanel);
 
         setContentPane(contentPanel);
 
@@ -64,7 +73,17 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * Register a new panel under a card key (e.g. for future Dashboard integration).
+     * Automatically opens and populates the Student Dashboard upon successful login.
+     *
+     * @param student User object returned from authentication
+     */
+    public void openDashboard(User student) {
+        dashboardController.loadDashboardData(student);
+        showCard(CARD_DASHBOARD);
+    }
+
+    /**
+     * Register a new panel under a card key.
      */
     public void addCard(JPanel panel, String cardKey) {
         contentPanel.add(panel, cardKey);
@@ -78,7 +97,15 @@ public class MainFrame extends JFrame {
         return registerPanel;
     }
 
+    public DashboardPanel getDashboardPanel() {
+        return dashboardPanel;
+    }
+
     public AuthController getAuthController() {
         return authController;
+    }
+
+    public DashboardController getDashboardController() {
+        return dashboardController;
     }
 }

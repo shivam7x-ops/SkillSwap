@@ -1,0 +1,45 @@
+# ──────────────────────────────────────────────
+# SkillSwap .gitignore
+# ──────────────────────────────────────────────
+
+# Build output
+target/
+dependency-reduced-pom.xml
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+nbproject/
+*.class
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment / secrets – NEVER commit these
+.env
+.env.*
+*.env
+firebase-service-account.json
+serviceAccountKey.json
+*service-account*.json
+*serviceAccount*.json
+*credentials*.json
+*firebase-adminsdk*.json
+*adminsdk*.json
+credentials/
+
+# Maven wrapper (if generated later)
+.mvn/wrapper/maven-wrapper.jar
+
+# Logs
+*.log
+!.env.example

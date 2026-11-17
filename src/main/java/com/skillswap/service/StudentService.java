@@ -159,6 +159,231 @@ public class StudentService {
     }
 
     /**
+     * Updates student profile fields (name and college) in Firebase Realtime Database.
+     *
+     * @param uid        student's Firebase UID
+     * @param newName    updated full name
+     * @param newCollege updated college
+     * @return CompletableFuture completing when write succeeds
+     */
+    public CompletableFuture<Void> updateStudentProfile(String uid, String newName, String newCollege) {
+        if (uid == null || uid.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("UID cannot be null or blank"));
+        }
+
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("name", newName != null ? newName.trim() : "");
+        updates.put("college", newCollege != null ? newCollege.trim() : "");
+
+        logger.info("Updating profile in Firebase for UID: {}", uid);
+        return firebaseService.updateChildren("users/" + uid, updates);
+    }
+
+    /**
+     * Updates the full list of skills the student can teach.
+     *
+     * @param uid    student's Firebase UID
+     * @param skills new list of skills to teach
+     * @return CompletableFuture completing when write succeeds
+     */
+    public CompletableFuture<Void> updateSkillsToTeach(String uid, List<String> skills) {
+        if (uid == null || uid.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("UID cannot be null or blank"));
+        }
+        List<String> cleanList = cleanSkillsList(skills);
+        logger.info("Saving {} skillsToTeach for UID: {}", cleanList.size(), uid);
+        return firebaseService.setValue("users/" + uid + "/skillsToTeach", cleanList);
+    }
+
+    /**
+     * Updates the full list of skills the student wants to learn.
+     *
+     * @param uid    student's Firebase UID
+     * @param skills new list of skills to learn
+     * @return CompletableFuture completing when write succeeds
+     */
+    public CompletableFuture<Void> updateSkillsToLearn(String uid, List<String> skills) {
+        if (uid == null || uid.isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("UID cannot be null or blank"));
+        }
+        List<String> cleanList = cleanSkillsList(skills);
+        logger.info("Saving {} skillsToLearn for UID: {}", cleanList.size(), uid);
+        return firebaseService.setValue("users/" + uid + "/skillsToLearn", cleanList);
+    }
+
+    /**
+     * Adds a skill to teach, validating for non-blank and duplicates.
+     */
+    public CompletableFuture<List<String>> addSkillToTeach(String uid, String skill, List<String> currentList) {
+        String validationErr = validateNewSkill(skill, currentList);
+        if (validationErr != null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException(validationErr));
+        }
+
+        List<String> updated = new ArrayList<>(currentList != null ? currentList : Collections.emptyList());
+        updated.add(skill.trim());
+
+        return updateSkillsToTeach(uid, updated).thenApply(v -> updated);
+    }
+
+    /**
+     * Edits an existing skill in skillsToTeach.
+     */
+    public CompletableFuture<List<String>> editSkillToTeach(String uid, String oldSkill, String newSkill, List<String> currentList) {
+        if (oldSkill == null || newSkill == null || newSkill.trim().isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Skill name cannot be empty."));
+        }
+        if (oldSkill.trim().equalsIgnoreCase(newSkill.trim())) {
+            return CompletableFuture.completedFuture(currentList); // No change needed
+        }
+
+        List<String> otherSkills = new ArrayList<>();
+        if (currentList != null) {
+            for (String s : currentList) {
+                if (!s.equalsIgnoreCase(oldSkill.trim())) {
+                    otherSkills.add(s);
+                }
+            }
+        }
+
+        String validationErr = validateNewSkill(newSkill, otherSkills);
+        if (validationErr != null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException(validationErr));
+        }
+
+        List<String> updated = new ArrayList<>();
+        if (currentList != null) {
+            for (String s : currentList) {
+                if (s.equalsIgnoreCase(oldSkill.trim())) {
+                    updated.add(newSkill.trim());
+                } else {
+                    updated.add(s);
+                }
+            }
+        }
+
+        return updateSkillsToTeach(uid, updated).thenApply(v -> updated);
+    }
+
+    /**
+     * Deletes a skill from skillsToTeach.
+     */
+    public CompletableFuture<List<String>> deleteSkillToTeach(String uid, String skillToDelete, List<String> currentList) {
+        List<String> updated = new ArrayList<>();
+        if (currentList != null) {
+            for (String s : currentList) {
+                if (!s.equalsIgnoreCase(skillToDelete.trim())) {
+                    updated.add(s);
+                }
+            }
+        }
+        return updateSkillsToTeach(uid, updated).thenApply(v -> updated);
+    }
+
+    /**
+     * Adds a skill to learn (learning interest), validating for non-blank and duplicates.
+     */
+    public CompletableFuture<List<String>> addSkillToLearn(String uid, String skill, List<String> currentList) {
+        String validationErr = validateNewSkill(skill, currentList);
+        if (validationErr != null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException(validationErr));
+        }
+
+        List<String> updated = new ArrayList<>(currentList != null ? currentList : Collections.emptyList());
+        updated.add(skill.trim());
+
+        return updateSkillsToLearn(uid, updated).thenApply(v -> updated);
+    }
+
+    /**
+     * Edits an existing skill in skillsToLearn.
+     */
+    public CompletableFuture<List<String>> editSkillToLearn(String uid, String oldSkill, String newSkill, List<String> currentList) {
+        if (oldSkill == null || newSkill == null || newSkill.trim().isBlank()) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Skill name cannot be empty."));
+        }
+        if (oldSkill.trim().equalsIgnoreCase(newSkill.trim())) {
+            return CompletableFuture.completedFuture(currentList); // No change
+        }
+
+        List<String> otherSkills = new ArrayList<>();
+        if (currentList != null) {
+            for (String s : currentList) {
+                if (!s.equalsIgnoreCase(oldSkill.trim())) {
+                    otherSkills.add(s);
+                }
+            }
+        }
+
+        String validationErr = validateNewSkill(newSkill, otherSkills);
+        if (validationErr != null) {
+            return CompletableFuture.failedFuture(new IllegalArgumentException(validationErr));
+        }
+
+        List<String> updated = new ArrayList<>();
+        if (currentList != null) {
+            for (String s : currentList) {
+                if (s.equalsIgnoreCase(oldSkill.trim())) {
+                    updated.add(newSkill.trim());
+                } else {
+                    updated.add(s);
+                }
+            }
+        }
+
+        return updateSkillsToLearn(uid, updated).thenApply(v -> updated);
+    }
+
+    /**
+     * Deletes a skill from skillsToLearn.
+     */
+    public CompletableFuture<List<String>> deleteSkillToLearn(String uid, String skillToDelete, List<String> currentList) {
+        List<String> updated = new ArrayList<>();
+        if (currentList != null) {
+            for (String s : currentList) {
+                if (!s.equalsIgnoreCase(skillToDelete.trim())) {
+                    updated.add(s);
+                }
+            }
+        }
+        return updateSkillsToLearn(uid, updated).thenApply(v -> updated);
+    }
+
+    public String validateNewSkill(String skill, List<String> existingList) {
+        if (skill == null || skill.trim().isBlank()) {
+            return "Skill name cannot be empty.";
+        }
+        String clean = skill.trim();
+        if (clean.length() < 2) {
+            return "Skill name must be at least 2 characters.";
+        }
+        if (existingList != null) {
+            for (String existing : existingList) {
+                if (existing != null && existing.trim().equalsIgnoreCase(clean)) {
+                    return "You have already added this skill.";
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<String> cleanSkillsList(List<String> list) {
+        if (list == null) return Collections.emptyList();
+        List<String> cleaned = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (String s : list) {
+            if (s != null && !s.trim().isBlank()) {
+                String clean = s.trim();
+                if (seen.add(clean)) {
+                    cleaned.add(clean);
+                }
+            }
+        }
+        Collections.sort(cleaned);
+        return cleaned;
+    }
+
+    /**
      * Attaches a real-time listener to the student's profile node.
      */
     public void attachProfileListener(String uid, ValueEventListener listener) {

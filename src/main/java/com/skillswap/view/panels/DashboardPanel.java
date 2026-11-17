@@ -16,8 +16,8 @@ public class DashboardPanel extends JPanel {
     private final JPanel centerContainer;
 
     private final DashboardHomePanel homePanel;
-    private final ProfileViewPanel profilePanel;
-    private final PlaceholderSubPanel skillsPanel;
+    private final ProfilePanel profilePanel;
+    private final SkillsManagementPanel skillsPanel;
     private final PlaceholderSubPanel findPanel;
     private final PlaceholderSubPanel requestsPanel;
 
@@ -35,8 +35,8 @@ public class DashboardPanel extends JPanel {
         centerContainer.setOpaque(false);
 
         homePanel = new DashboardHomePanel();
-        profilePanel = new ProfileViewPanel();
-        skillsPanel = new PlaceholderSubPanel("My Skills", "💡", "Manage the skills you offer and want to learn.");
+        profilePanel = new ProfilePanel();
+        skillsPanel = new SkillsManagementPanel();
         findPanel = new PlaceholderSubPanel("Find Students", "🔍", "Explore students with complementary skills for swapping.");
         requestsPanel = new PlaceholderSubPanel("Learning Requests", "📬", "Review incoming and outgoing exchange requests.");
 
@@ -64,7 +64,11 @@ public class DashboardPanel extends JPanel {
         return homePanel;
     }
 
-    public ProfileViewPanel getProfilePanel() {
+    public ProfilePanel getProfilePanel() {
         return profilePanel;
+    }
+
+    public SkillsManagementPanel getSkillsPanel() {
+        return skillsPanel;
     }
 }
